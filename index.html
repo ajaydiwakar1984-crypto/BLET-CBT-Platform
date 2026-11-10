@@ -178,6 +178,10 @@
       .exam-layout { flex-direction: column; height: auto; }
       .palette-sidebar { width: 100%; border-left: none; border-top: 1px solid var(--border); }
     }
+    .auth-wrap { max-width: 520px; margin: 45px auto; padding: 24px; }
+    .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 26px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
+    .auth-input { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-alt); color: var(--text); margin: 6px 0 14px; font: inherit; }
+    .auth-message { min-height: 24px; font-size: 13px; margin-top: 12px; color: var(--text-muted); }
     @media print {
       .no-print { display: none !important; }
       body { background: #fff !important; color: #000 !important; }
@@ -187,6 +191,7 @@
 <body>
   <div id="app"></div>
   
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     (async function() {
       const SETS = await Promise.all(
@@ -198,6 +203,11 @@
             })
         )
       );
+      // Supabase public browser configuration. Publishable keys are safe in frontend code.
+      const SUPABASE_URL = 'https://hhtsvutudubhtvzurdwh.supabase.co';
+      const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_SFuWy1vi6Tggtm3opo9yvg_suq4rPv-';
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
       const STORAGE_PREFIX = 'blet_standalone_cbt_v1_';
       let state = {
         view: 'dashboard', // 'dashboard' | 'instructions' | 'exam' | 'result'
@@ -214,7 +224,11 @@
         showPracticeAns: false,
         resultFilter: 'all',
         timerHandle: null,
-        lastResult: null
+        lastResult: null,
+        authUser: null,
+        subscription: null,
+        authMode: 'signup',
+        authMessage: ''
       };
 
       if (state.darkMode) document.body.classList.add('dark');
@@ -249,6 +263,10 @@
       }
 
       function startExam() {
+        if (!hasActiveAccess()) {
+          alert('आपकी Membership सक्रिय नहीं है। कृपया Login करके ₹199 का भुगतान करें।');
+          state.view = state.authUser ? 'dashboard' : 'auth'; render(); return;
+        }
         const nameInput = document.getElementById('cand-name-input');
         const agreeBox = document.getElementById('agree-check');
         if (agreeBox && !agreeBox.checked) {
@@ -400,63 +418,139 @@
         render();
       }
 
+      async function refreshMembership() {
+        if (!state.authUser) { state.subscription = null; return false; }
+        const { data, error } = await supabase.from('subscriptions')
+          .select('id, starts_at, ends_at, status')
+          .eq('user_id', state.authUser.id).eq('status', 'active')
+          .gt('ends_at', new Date().toISOString())
+          .order('ends_at', { ascending: false }).limit(1).maybeSingle();
+        if (error) { console.error('Subscription lookup failed:', error); state.subscription = null; return false; }
+        state.subscription = data || null;
+        return !!state.subscription;
+      }
+
+      function hasActiveAccess() {
+        return !!(state.subscription && state.subscription.status === 'active' &&
+          new Date(state.subscription.ends_at).getTime() > Date.now());
+      }
+
+      async function initializeAuth() {
+        const { data: { session } } = await supabase.auth.getSession();
+        state.authUser = session?.user || null;
+        if (state.authUser) await refreshMembership();
+        supabase.auth.onAuthStateChange((_event, sessionNow) => {
+          setTimeout(async () => {
+            state.authUser = sessionNow?.user || null;
+            if (state.authUser) await refreshMembership(); else state.subscription = null;
+            if (state.view !== 'exam' && state.view !== 'result') {
+              state.view = state.authUser ? 'dashboard' : 'auth'; render();
+            }
+          }, 0);
+        });
+        state.view = state.authUser ? 'dashboard' : 'auth';
+        render();
+      }
+
+      async function signUpOrSignIn(mode) {
+        const email = document.getElementById('auth-email')?.value.trim();
+        const password = document.getElementById('auth-password')?.value || '';
+        const name = document.getElementById('auth-name')?.value.trim() || '';
+        const msg = document.getElementById('auth-message');
+        if (!email || !password) { if (msg) msg.textContent = 'कृपया ईमेल और पासवर्ड भरें।'; return; }
+        if (password.length < 6) { if (msg) msg.textContent = 'पासवर्ड कम-से-कम 6 अक्षरों का होना चाहिए।'; return; }
+        if (msg) msg.textContent = 'कृपया प्रतीक्षा करें…';
+        const result = mode === 'signup'
+          ? await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } })
+          : await supabase.auth.signInWithPassword({ email, password });
+        if (result.error) { if (msg) msg.textContent = result.error.message; return; }
+        if (mode === 'signup' && !result.data.session) {
+          if (msg) msg.textContent = 'Registration सफल। ईमेल में confirmation link खोलें, फिर Login करें।'; return;
+        }
+        state.authUser = result.data.user || result.data.session?.user || null;
+        if (state.authUser) { await refreshMembership(); state.view = 'dashboard'; render(); }
+      }
+
+      async function signOut() {
+        await supabase.auth.signOut();
+        state.authUser = null; state.subscription = null; state.view = 'auth'; render();
+      }
+
+      function switchAuthMode(mode) { state.authMode = mode; state.authMessage = ''; render(); }
+
+      async function openInstructions(setNo, mode) {
+        if (!state.authUser) { state.view = 'auth'; state.authMessage = 'CBT शुरू करने से पहले Student Login करें।'; render(); return; }
+        await refreshMembership();
+        if (!hasActiveAccess()) {
+          state.view = 'dashboard'; render();
+          alert('CBT Access के लिए पहले ₹199 का भुगतान करके 180 दिन की Membership सक्रिय करें।'); return;
+        }
+        state.activeSet = SETS.find(s => s.no === setNo) || SETS[0];
+        state.mode = mode || 'exam'; state.view = 'instructions'; render();
+      }
+
       async function payNow() {
-        const statusEl = document.getElementById('payment-status');
         const showStatus = (message, isError = false) => {
           const el = document.getElementById('payment-status');
           if (el) { el.textContent = message; el.style.color = isError ? '#fecaca' : '#bbf7d0'; }
         };
-        if (!window.Razorpay) {
-          showStatus('Payment checkout load नहीं हुआ। पेज Refresh करके पुनः प्रयास करें।', true);
-          return;
-        }
+        if (!state.authUser) { state.view = 'auth'; state.authMessage = 'भुगतान से पहले Student Login करें।'; render(); return; }
+        if (hasActiveAccess()) { showStatus('आपकी Membership पहले से सक्रिय है।'); return; }
+        if (!window.Razorpay) { showStatus('Razorpay Checkout लोड नहीं हुआ। पेज Refresh करें।', true); return; }
+
         try {
-          showStatus('Order बनाया जा रहा है…');
-          const orderResponse = await fetch('/api/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+          showStatus('सुरक्षित Order बनाया जा रहा है…');
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.access_token) throw new Error('Login session समाप्त है। दोबारा Login करें।');
+          const headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${session.access_token}` };
+          const orderResponse = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-order`,
+            { method: 'POST', headers, body: JSON.stringify({}) });
           const order = await orderResponse.json();
-          if (!orderResponse.ok) throw new Error(order.error || 'Order नहीं बन सका।');
+          if (!orderResponse.ok || !order.order_id) throw new Error(order.error || order.message || 'Order नहीं बन सका।');
 
           const options = {
-            key: order.key_id,
-            amount: order.amount,
-            currency: order.currency,
+            key: order.key_id, amount: order.amount, currency: order.currency || 'INR',
             name: 'BLET Complete CBT Test Series',
             description: '50 CBT Sets · 7,500 Questions · 180 Days Access',
-            order_id: order.order_id,
+            order_id: order.order_id, prefill: { email: state.authUser.email || '' },
             handler: async function (response) {
               try {
-                showStatus('Payment की पुष्टि की जा रही है…');
-                const verifyResponse = await fetch('/api/verify-payment', {
+                showStatus('Payment की server-side पुष्टि की जा रही है…');
+                const { data: { session: freshSession } } = await supabase.auth.getSession();
+                if (!freshSession?.access_token) throw new Error('Login session समाप्त हो गया। दोबारा Login करें।');
+                const verifyResponse = await fetch(`${SUPABASE_URL}/functions/v1/verify-payment`, {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_PUBLISHABLE_KEY,
+                    'Authorization': `Bearer ${freshSession.access_token}` },
                   body: JSON.stringify(response)
                 });
                 const verification = await verifyResponse.json();
-                if (!verifyResponse.ok || !verification.success) throw new Error(verification.error || 'Payment verify नहीं हुआ।');
-                showStatus('Payment सत्यापित हुआ। Membership/180-day access सक्रिय करने के लिए Student Login और Database सेटअप अभी आवश्यक है।');
-                alert('Payment Razorpay से सत्यापित हो गया है। आपका Order ID: ' + verification.order_id + '\n180 दिन का access अभी स्वतः सक्रिय नहीं हुआ है; Admin/Database activation अगले चरण में जोड़ा जाएगा।');
-              } catch (error) {
-                showStatus(error.message || 'Payment verification में समस्या आई।', true);
-              }
+                if (!verifyResponse.ok || verification.success !== true)
+                  throw new Error(verification.error || verification.message || 'Payment verify नहीं हुआ।');
+                await refreshMembership();
+                if (!hasActiveAccess()) throw new Error('Payment verify हुआ, लेकिन Membership रिकॉर्ड नहीं मिला। Admin से संपर्क करें।');
+                showStatus('भुगतान सफल! आपकी 180 दिन की Membership सक्रिय है।');
+                alert('भुगतान सफल! आपका BLET CBT Access 180 दिनों के लिए सक्रिय हो गया है।');
+                state.view = 'dashboard'; render();
+              } catch (error) { showStatus(error.message || 'Payment verification में समस्या आई।', true); }
             },
-            modal: { ondismiss: function () { showStatus('Payment प्रक्रिया रद्द की गई। आप चाहें तो फिर प्रयास कर सकते हैं।', true); } },
+            modal: { ondismiss: () => showStatus('Payment प्रक्रिया रद्द की गई। आप फिर प्रयास कर सकते हैं।', true) },
             theme: { color: '#1d4ed8' }
           };
           const checkout = new Razorpay(options);
-          checkout.on('payment.failed', function (response) {
-            const reason = response.error && response.error.description ? response.error.description : 'Payment असफल हुआ।';
-            showStatus(reason, true);
-          });
+          checkout.on('payment.failed', response => showStatus(response.error?.description || 'Payment असफल हुआ।', true));
           checkout.open();
-        } catch (error) {
-          showStatus(error.message || 'Payment शुरू नहीं हो सका।', true);
-        }
+        } catch (error) { showStatus(error.message || 'Payment शुरू नहीं हो सका।', true); }
       }
 
       window.BLET = {
         toggleTheme,
         payNow,
         openInstructions,
+        signUpOrSignIn,
+        switchAuthMode,
+        signOut,
         startExam,
         goToQuestion,
         selectOption,
@@ -520,8 +614,8 @@
                 </div>
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button class="btn btn-primary" style="flex:1;" onclick="BLET.openInstructions(${s.no}, 'exam')">▶ CBT Exam दें</button>
-                <button class="btn btn-outline" onclick="BLET.openInstructions(${s.no}, 'practice')">Practice</button>
+                <button class="btn btn-primary" style="flex:1;" onclick="BLET.openInstructions(${s.no}, 'exam')" ${hasActiveAccess() ? '' : 'disabled'}>▶ CBT Exam दें</button>
+                <button class="btn btn-outline" onclick="BLET.openInstructions(${s.no}, 'practice')" ${hasActiveAccess() ? '' : 'disabled'}>Practice</button>
                 ${saved ? `<button class="btn btn-success" style="width:100%;" onclick="BLET.viewSavedResult(${s.no})">परिणाम एवं उत्तर कुंजी देखें (${saved.correct}/150)</button>` : ''}
               </div>
             </div>
@@ -538,9 +632,11 @@
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:11px;color:#cbd5e1;">${state.authUser?.email || ''}</span>
               <button class="btn btn-outline" style="background:#1e293b;color:#fff;border-color:#334155;" onclick="BLET.toggleTheme()">
                 ${state.darkMode ? '☀ Light' : '☾ Dark'}
               </button>
+              <button class="btn btn-outline" style="background:#1e293b;color:#fff;border-color:#334155;" onclick="BLET.signOut()">Logout</button>
             </div>
           </header>
           <div class="container">
@@ -553,10 +649,10 @@
                 </p>
               </div>
               <div style="display:flex;flex-direction:column;gap:8px;min-width:230px;">
-                <button class="btn btn-success" style="padding:12px 20px;font-size:14px;" onclick="BLET.payNow()">
-                  ₹199 में 180 दिन का Access खरीदें
-                </button>
-                <button class="btn btn-primary" style="padding:12px 20px;font-size:14px;" onclick="BLET.openInstructions(${SETS[0].no}, 'exam')">
+                ${hasActiveAccess()
+                  ? `<div style="padding:10px 12px;border-radius:8px;background:#14532d;color:#dcfce7;font-size:12px;font-weight:700;">✓ Membership सक्रिय · ${new Date(state.subscription.ends_at).toLocaleDateString('hi-IN')} तक</div>`
+                  : `<button class="btn btn-success" style="padding:12px 20px;font-size:14px;" onclick="BLET.payNow()">₹199 में 180 दिन का Access खरीदें</button>`}
+                <button class="btn btn-primary" style="padding:12px 20px;font-size:14px;" onclick="BLET.openInstructions(${SETS[0].no}, 'exam')" ${hasActiveAccess() ? '' : 'disabled'}>
                   ▶ ${SETS[0].code} परीक्षा प्रारंभ करें
                 </button>
                 <div id="payment-status" role="status" aria-live="polite" style="font-size:12px;color:#cbd5e1;"></div>
@@ -826,15 +922,42 @@
         `;
       }
 
+
+      function renderAuth() {
+        const isSignup = state.authMode === 'signup';
+        return `
+          <header class="topbar">
+            <div class="brand"><div class="brand-badge">BLET</div><div style="font-weight:800;">BLET Student Portal</div></div>
+            <button class="btn btn-outline" style="background:#1e293b;color:#fff;border-color:#334155;" onclick="BLET.toggleTheme()">${state.darkMode ? '☀ Light' : '☾ Dark'}</button>
+          </header>
+          <div class="auth-wrap"><div class="auth-card">
+            <h1 style="font-size:24px;margin-bottom:6px;">${isSignup ? 'Student Registration' : 'Student Login'}</h1>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">BLET CBT के लिए अपना अकाउंट बनाएँ या Login करें। CBT शुरू करने के लिए 180 दिन की सक्रिय Membership आवश्यक है।</p>
+            ${isSignup ? `<label style="font-size:13px;font-weight:700;">पूरा नाम</label><input class="auth-input" id="auth-name" type="text" autocomplete="name" placeholder="अपना नाम लिखें">` : ''}
+            <label style="font-size:13px;font-weight:700;">ईमेल</label>
+            <input class="auth-input" id="auth-email" type="email" autocomplete="email" placeholder="name@example.com">
+            <label style="font-size:13px;font-weight:700;">पासवर्ड</label>
+            <input class="auth-input" id="auth-password" type="password" autocomplete="${isSignup ? 'new-password' : 'current-password'}" placeholder="कम-से-कम 6 अक्षर">
+            <button class="btn btn-primary" style="width:100%;padding:12px;" onclick="BLET.signUpOrSignIn('${isSignup ? 'signup' : 'login'}')">${isSignup ? 'अकाउंट बनाएँ' : 'Login करें'}</button>
+            <div class="auth-message" id="auth-message">${state.authMessage || ''}</div>
+            <div style="margin-top:10px;font-size:13px;text-align:center;">
+              ${isSignup ? `पहले से अकाउंट है? <a href="#" onclick="event.preventDefault();BLET.switchAuthMode('login')">Login करें</a>`
+                : `नया विद्यार्थी हैं? <a href="#" onclick="event.preventDefault();BLET.switchAuthMode('signup')">Registration करें</a>`}
+            </div>
+          </div></div>
+        `;
+      }
+
       function render() {
         const root = document.getElementById('app');
-        if (state.view === 'instructions') root.innerHTML = renderInstructions();
+        if (state.view === 'auth') root.innerHTML = renderAuth();
+        else if (state.view === 'instructions') root.innerHTML = renderInstructions();
         else if (state.view === 'exam') root.innerHTML = renderExam();
         else if (state.view === 'result') root.innerHTML = renderResult();
         else root.innerHTML = renderDashboard();
       }
 
-      render();
+      initializeAuth().catch(error => { console.error(error); state.view = 'auth'; render(); });
     })();
   </script>
 </body>

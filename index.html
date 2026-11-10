@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BLET Complete Online/Offline CBT Platform (50 Sets · 7,500 Unique Questions)</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-alt: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --primary: #1d4ed8;
+      --primary-hover: #1e40af;
+      --primary-soft: #eff6ff;
+      --success: #15803d;
+      --success-soft: #f0fdf4;
+      --danger: #dc2626;
+      --danger-soft: #fef2f2;
+      --purple: #7c3aed;
+      --indigo: #4f46e5;
+      --amber: #d97706;
+    }
+    body.dark {
+      --bg: #020617;
+      --surface: #0f172a;
+      --surface-alt: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-soft: rgba(59, 130, 246, 0.15);
+      --success: #16a34a;
+      --success-soft: rgba(22, 163, 74, 0.18);
+      --danger: #ef4444;
+      --danger-soft: rgba(239, 68, 68, 0.18);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .tabular { font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', monospace; }
+    header.topbar {
+      height: 62px;
+      background: #0f172a;
+      color: #fff;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      gap: 12px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+    .brand-badge {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: #2563eb; color: #fff; font-weight: 800; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 9px 15px; border-radius: 8px; font-weight: 700; font-size: 13px;
+      border: 1px solid transparent; cursor: pointer; transition: 0.15s ease;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-purple { background: var(--purple); color: #fff; }
+    .btn-outline {
+      background: var(--surface); color: var(--text); border-color: var(--border);
+    }
+    .btn-outline:hover { background: var(--surface-alt); }
+    .container { max-width: 1280px; margin: 0 auto; padding: 24px 16px; width: 100%; }
+    .hero {
+      background: #0f172a; color: #fff; border-radius: 16px; padding: 24px;
+      margin-bottom: 24px; border: 1px solid #1e293b;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px; margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px;
+    }
+    .sets-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 16px;
+    }
+    .set-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px; display: flex; flex-direction: column;
+      justify-content: space-between; gap: 14px;
+    }
+    .set-card:hover { border-color: var(--primary); }
+    .exam-layout {
+      display: flex; flex: 1; height: calc(100vh - 62px); overflow: hidden;
+    }
+    .exam-main {
+      flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column;
+    }
+    .q-card {
+      max-width: 900px; width: 100%; margin: 0 auto; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 14px; padding: 24px;
+      flex: 1; display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .opt-btn {
+      width: 100%; text-align: left; padding: 14px 16px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+      display: flex; align-items: flex-start; gap: 12px; cursor: pointer;
+      margin-bottom: 10px; font-size: 15px; font-family: inherit; transition: 0.15s;
+    }
+    .opt-btn:hover { border-color: var(--primary); background: var(--surface-alt); }
+    .opt-btn.selected {
+      border-color: var(--primary); background: var(--primary-soft);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+    .opt-btn.correct {
+      border-color: var(--success); background: var(--success-soft); font-weight: 600;
+    }
+    .opt-btn.wrong {
+      border-color: var(--danger); background: var(--danger-soft);
+    }
+    .opt-key {
+      width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 12px; flex-shrink: 0; background: var(--surface-alt);
+    }
+    .opt-btn.selected .opt-key { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .palette-sidebar {
+      width: 360px; background: var(--surface); border-left: 1px solid var(--border);
+      display: flex; flex-direction: column; flex-shrink: 0;
+    }
+    .palette-grid {
+      display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px; padding: 14px;
+    }
+    .p-btn {
+      height: 35px; border-radius: 6px; border: 1px solid var(--border);
+      font-weight: 700; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface-alt); color: var(--text);
+    }
+    .p-btn.current { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .p-btn.answered { background: #15803d; color: #fff; border-color: #15803d; }
+    .p-btn.not_answered { background: #dc2626; color: #fff; border-color: #dc2626; }
+    .p-btn.marked_for_review { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+    .p-btn.answered_and_marked { background: #4f46e5; color: #fff; border: 2px solid #4ade80; }
+    .timer-pill {
+      padding: 6px 12px; border-radius: 8px; background: #1e293b;
+      border: 1px solid #334155; color: #4ade80; font-weight: 800; font-size: 15px;
+    }
+    .timer-pill.low { background: #450a0a; border-color: #ef4444; color: #fca5a5; }
+    table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.data-table th, table.data-table td {
+      padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left;
+    }
+    table.data-table th { background: var(--surface-alt); font-weight: 700; }
+    @media (max-width: 1024px) {
+      .exam-layout { flex-direction: column; height: auto; }
+      .palette-sidebar { width: 100%; border-left: none; border-top: 1px solid var(--border); }
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  
+  <script>
+    (async function() {
+      const SETS = await Promise.all(
+        Array.from({ length: 50 }, (_, i) =>
+          fetch(`data/set-${String(i + 1).padStart(2, '0')}.json`)
+            .then(response => {
+              if (!response.ok) throw new Error(`Question set ${i + 1} could not be loaded`);
+              return response.json();
+            })
+        )
+      );
+      const STORAGE_PREFIX = 'blet_standalone_cbt_v1_';
+      let state = {
+        view: 'dashboard', // 'dashboard' | 'instructions' | 'exam' | 'result'
+        darkMode: localStorage.getItem(STORAGE_PREFIX + 'dark') === 'true',
+        candidateName: localStorage.getItem(STORAGE_PREFIX + 'name') || 'अभ्यर्थी (BLET Candidate)',
+        searchQuery: '',
+        activeSet: SETS[0],
+        mode: 'exam', // 'exam' | 'practice'
+        currentIdx: 0,
+        remainingSeconds: 150 * 60,
+        responses: {}, // idx -> 'A'|'B'|'C'|'D'|null
+        palette: {}, // idx -> status
+        selectedDraft: null,
+        showPracticeAns: false,
+        resultFilter: 'all',
+        timerHandle: null,
+        lastResult: null
+      };
+
+      if (state.darkMode) document.body.classList.add('dark');
+
+      function toggleTheme() {
+        state.darkMode = !state.darkMode;
+        document.body.classList.toggle('dark', state.darkMode);
+        localStorage.setItem(STORAGE_PREFIX + 'dark', String(state.darkMode));
+        render();
+      }
+
+      function formatMMSS(sec) {
+        const s = Math.max(0, sec);
+        const m = Math.floor(s / 60);
+        const r = s % 60;
+        return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+      }
+
+      function getSavedResult(setNo) {
+        try {
+          const raw = localStorage.getItem(STORAGE_PREFIX + 'result_' + setNo);
+          return raw ? JSON.parse(raw) : null;
+        } catch (e) { return null; }
+      }
+
+      function openInstructions(setNo, mode) {
+        const found = SETS.find(s => s.no === setNo) || SETS[0];
+        state.activeSet = found;
+        state.mode = mode || 'exam';
+        state.view = 'instructions';
+        render();
+      }
+
+      function startExam() {
+        const nameInput = document.getElementById('cand-name-input');
+        const agreeBox = document.getElementById('agree-check');
+        if (agreeBox && !agreeBox.checked) {
+          alert('कृपया परीक्षा प्रारंभ करने से पूर्व सहमति चेकबॉक्स पर टिक करें।');
+          return;
+        }
+        if (nameInput && nameInput.value.trim()) {
+          state.candidateName = nameInput.value.trim();
+          localStorage.setItem(STORAGE_PREFIX + 'name', state.candidateName);
+        }
+        state.currentIdx = 0;
+        state.remainingSeconds = 150 * 60;
+        state.responses = {};
+        state.palette = { 0: 'not_answered' };
+        for (let i = 1; i < state.activeSet.qs.length; i++) {
+          state.palette[i] = 'not_visited';
+        }
+        state.selectedDraft = null;
+        state.showPracticeAns = false;
+        state.view = 'exam';
+
+        if (state.timerHandle) clearInterval(state.timerHandle);
+        state.timerHandle = setInterval(() => {
+          if (state.view !== 'exam') return;
+          state.remainingSeconds--;
+          const timerEl = document.getElementById('live-timer');
+          if (timerEl) {
+            timerEl.textContent = formatMMSS(state.remainingSeconds);
+            if (state.remainingSeconds <= 600) timerEl.classList.add('low');
+          }
+          if (state.remainingSeconds <= 0) {
+            clearInterval(state.timerHandle);
+            submitExam(true);
+          }
+        }, 1000);
+        render();
+      }
+
+      function goToQuestion(idx) {
+        const max = state.activeSet.qs.length - 1;
+        const target = Math.max(0, Math.min(max, idx));
+        if (state.palette[state.currentIdx] === 'not_visited' && !state.responses[state.currentIdx]) {
+          state.palette[state.currentIdx] = 'not_answered';
+        }
+        if (state.palette[target] === 'not_visited') {
+          state.palette[target] = 'not_answered';
+        }
+        state.currentIdx = target;
+        state.selectedDraft = state.responses[target] || null;
+        state.showPracticeAns = false;
+        render();
+      }
+
+      function selectOption(optKey) {
+        state.selectedDraft = optKey;
+        render();
+      }
+
+      function saveAndNext() {
+        const idx = state.currentIdx;
+        state.responses[idx] = state.selectedDraft || null;
+        state.palette[idx] = state.selectedDraft ? 'answered' : 'not_answered';
+        const nextIdx = idx < state.activeSet.qs.length - 1 ? idx + 1 : idx;
+        if (state.palette[nextIdx] === 'not_visited') state.palette[nextIdx] = 'not_answered';
+        state.currentIdx = nextIdx;
+        state.selectedDraft = state.responses[nextIdx] || null;
+        state.showPracticeAns = false;
+        render();
+      }
+
+      function markReviewAndNext() {
+        const idx = state.currentIdx;
+        state.responses[idx] = state.selectedDraft || null;
+        state.palette[idx] = state.selectedDraft ? 'answered_and_marked' : 'marked_for_review';
+        const nextIdx = idx < state.activeSet.qs.length - 1 ? idx + 1 : idx;
+        if (state.palette[nextIdx] === 'not_visited') state.palette[nextIdx] = 'not_answered';
+        state.currentIdx = nextIdx;
+        state.selectedDraft = state.responses[nextIdx] || null;
+        state.showPracticeAns = false;
+        render();
+      }
+
+      function clearResponse() {
+        const idx = state.currentIdx;
+        state.selectedDraft = null;
+        state.responses[idx] = null;
+        state.palette[idx] = 'not_answered';
+        render();
+      }
+
+      function submitExam(auto) {
+        if (!auto) {
+          let att = 0;
+          Object.values(state.responses).forEach(v => { if (v) att++; });
+          if (!confirm('क्या आप परीक्षा सबमिट करना चाहते हैं? कुल हल किए गए प्रश्न: ' + att + ' / ' + state.activeSet.qs.length)) {
+            return;
+          }
+        }
+        if (state.timerHandle) clearInterval(state.timerHandle);
+
+        const qs = state.activeSet.qs;
+        let correct = 0, incorrect = 0, unattempted = 0;
+        let libCorrect = 0, libTotal = 0, gkCorrect = 0, gkTotal = 0;
+
+        qs.forEach((q, i) => {
+          const ans = state.responses[i] || null;
+          if (q.s === 'L') libTotal++; else gkTotal++;
+          if (!ans) {
+            unattempted++;
+          } else if (ans === q.a) {
+            correct++;
+            if (q.s === 'L') libCorrect++; else gkCorrect++;
+          } else {
+            incorrect++;
+          }
+        });
+
+        const attempted = correct + incorrect;
+        const pct = ((correct / qs.length) * 100).toFixed(2);
+        const acc = attempted > 0 ? ((correct / attempted) * 100).toFixed(1) : '0.0';
+        const resultObj = {
+          setNo: state.activeSet.no,
+          setCode: state.activeSet.code,
+          setTitle: state.activeSet.title,
+          candidateName: state.candidateName,
+          dateStr: new Date().toLocaleString('hi-IN'),
+          timeTakenSec: Math.max(1, 150 * 60 - state.remainingSeconds),
+          total: qs.length,
+          attempted,
+          correct,
+          incorrect,
+          unattempted,
+          pct,
+          acc,
+          libCorrect,
+          libTotal,
+          gkCorrect,
+          gkTotal,
+          responses: { ...state.responses }
+        };
+
+        try {
+          localStorage.setItem(STORAGE_PREFIX + 'result_' + state.activeSet.no, JSON.stringify(resultObj));
+        } catch (e) {}
+
+        state.lastResult = resultObj;
+        state.resultFilter = 'all';
+        state.view = 'result';
+        render();
+      }
+
+      async function payNow() {
+        const statusEl = document.getElementById('payment-status');
+        const showStatus = (message, isError = false) => {
+          const el = document.getElementById('payment-status');
+          if (el) { el.textContent = message; el.style.color = isError ? '#fecaca' : '#bbf7d0'; }
+        };
+        if (!window.Razorpay) {
+          showStatus('Payment checkout load नहीं हुआ। पेज Refresh करके पुनः प्रयास करें।', true);
+          return;
+        }
+        try {
+          showStatus('Order बनाया जा रहा है…');
+          const orderResponse = await fetch('/api/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+          const order = await orderResponse.json();
+          if (!orderResponse.ok) throw new Error(order.error || 'Order नहीं बन सका।');
+
+          const options = {
+            key: order.key_id,
+            amount: order.amount,
+            currency: order.currency,
+            name: 'BLET Complete CBT Test Series',
+            description: '50 CBT Sets · 7,500 Questions · 180 Days Access',
+            order_id: order.order_id,
+            handler: async function (response) {
+              try {
+                showStatus('Payment की पुष्टि की जा रही है…');
+                const verifyResponse = await fetch('/api/verify-payment', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(response)
+                });
+                const verification = await verifyResponse.json();
+                if (!verifyResponse.ok || !verification.success) throw new Error(verification.error || 'Payment verify नहीं हुआ।');
+                showStatus('Payment सत्यापित हुआ। Membership/180-day access सक्रिय करने के लिए Student Login और Database सेटअप अभी आवश्यक है।');
+                alert('Payment Razorpay से सत्यापित हो गया है। आपका Order ID: ' + verification.order_id + '\n180 दिन का access अभी स्वतः सक्रिय नहीं हुआ है; Admin/Database activation अगले चरण में जोड़ा जाएगा।');
+              } catch (error) {
+                showStatus(error.message || 'Payment verification में समस्या आई।', true);
+              }
+            },
+            modal: { ondismiss: function () { showStatus('Payment प्रक्रिया रद्द की गई। आप चाहें तो फिर प्रयास कर सकते हैं।', true); } },
+            theme: { color: '#1d4ed8' }
+          };
+          const checkout = new Razorpay(options);
+          checkout.on('payment.failed', function (response) {
+            const reason = response.error && response.error.description ? response.error.description : 'Payment असफल हुआ।';
+            showStatus(reason, true);
+          });
+          checkout.open();
+        } catch (error) {
+          showStatus(error.message || 'Payment शुरू नहीं हो सका।', true);
+        }
+      }
+
+      window.BLET = {
+        toggleTheme,
+        payNow,
+        openInstructions,
+        startExam,
+        goToQuestion,
+        selectOption,
+        saveAndNext,
+        markReviewAndNext,
+        clearResponse,
+        submitExam,
+        backHome: function() {
+          if (state.timerHandle) clearInterval(state.timerHandle);
+          state.view = 'dashboard';
+          render();
+        },
+        togglePracticeAns: function() {
+          state.showPracticeAns = !state.showPracticeAns;
+          render();
+        },
+        setResultFilter: function(f) {
+          state.resultFilter = f;
+          render();
+        },
+        viewSavedResult: function(setNo) {
+          const saved = getSavedResult(setNo);
+          const found = SETS.find(s => s.no === setNo);
+          if (saved && found) {
+            state.activeSet = found;
+            state.lastResult = saved;
+            state.resultFilter = 'all';
+            state.view = 'result';
+            render();
+          }
+        },
+        onSearchInput: function(val) {
+          state.searchQuery = val;
+          render();
+        }
+      };
+
+      function renderDashboard() {
+        const qLower = state.searchQuery.trim().toLowerCase();
+        const filtered = SETS.filter(s => {
+          if (!qLower) return true;
+          return (s.code + ' ' + s.title + ' ' + s.sub).toLowerCase().includes(qLower);
+        });
+        const totalQuestionsAll = SETS.reduce((a, b) => a + b.qs.length, 0);
+
+        let cardsHtml = filtered.map(s => {
+          const saved = getSavedResult(s.no);
+          return `
+            <div class="set-card">
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <span class="tabular" style="font-weight:800;font-size:13px;padding:4px 9px;border-radius:6px;background:#0f172a;color:#fff;">${s.code}</span>
+                  <span class="tabular" style="font-size:12px;font-weight:700;color:${saved ? '#16a34a' : 'var(--text-muted)'};">
+                    ${saved ? '✓ ' + saved.correct + '/150 (' + saved.pct + '%)' : '150 प्रश्न · 150 मिनट'}
+                  </span>
+                </div>
+                <h3 style="font-size:16px;font-weight:800;margin-bottom:4px;">${s.title}</h3>
+                <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">${s.sub}</p>
+                <div style="font-size:11px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:8px;">
+                  Library Science: 100 Qs · General Knowledge: 50 Qs
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-primary" style="flex:1;" onclick="BLET.openInstructions(${s.no}, 'exam')">▶ CBT Exam दें</button>
+                <button class="btn btn-outline" onclick="BLET.openInstructions(${s.no}, 'practice')">Practice</button>
+                ${saved ? `<button class="btn btn-success" style="width:100%;" onclick="BLET.viewSavedResult(${s.no})">परिणाम एवं उत्तर कुंजी देखें (${saved.correct}/150)</button>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <header class="topbar no-print">
+            <div class="brand" onclick="BLET.backHome()">
+              <div class="brand-badge">BLET</div>
+              <div>
+                <div style="font-weight:800;font-size:15px;">बिहार पुस्तकालय पात्रता परीक्षा (BLET) — Web CBT</div>
+                <div style="font-size:11px;color:#94a3b8;">Standalone Offline-Ready Examination Portal · ${SETS.length} Sets (${totalQuestionsAll.toLocaleString('en-IN')} Questions)</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <button class="btn btn-outline" style="background:#1e293b;color:#fff;border-color:#334155;" onclick="BLET.toggleTheme()">
+                ${state.darkMode ? '☀ Light' : '☾ Dark'}
+              </button>
+            </div>
+          </header>
+          <div class="container">
+            <div class="hero">
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;">Bihar Library Eligibility Test · Standalone Web CBT Edition</div>
+                <h1 style="font-size:24px;font-weight:800;margin:4px 0 8px;">बिहार पुस्तकालय पात्रता परीक्षा — ऑफ़लाइन/ऑनलाइन वेब सीबीटी प्लेटफॉर्म</h1>
+                <p style="font-size:13px;color:#cbd5e1;max-width:780px;">
+                  यह वेब सीबीटी फाइल बिना इंटरनेट या सर्वर के किसी भी कंप्यूटर, लैपटॉप या मोबाइल ब्राउज़र में सीधे चलती है। प्रत्येक सेट में 100 Library Science + 50 General Knowledge = 150 अद्वितीय प्रश्न विस्तृत हिंदी व्याख्या सहित शामिल हैं।
+                </p>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;min-width:230px;">
+                <button class="btn btn-success" style="padding:12px 20px;font-size:14px;" onclick="BLET.payNow()">
+                  ₹199 में 180 दिन का Access खरीदें
+                </button>
+                <button class="btn btn-primary" style="padding:12px 20px;font-size:14px;" onclick="BLET.openInstructions(${SETS[0].no}, 'exam')">
+                  ▶ ${SETS[0].code} परीक्षा प्रारंभ करें
+                </button>
+                <div id="payment-status" role="status" aria-live="polite" style="font-size:12px;color:#cbd5e1;"></div>
+              </div>
+            </div>
+
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <div style="font-size:12px;color:var(--text-muted);">उपलब्ध सीबीटी सेट्स</div>
+                <div class="tabular" style="font-size:24px;font-weight:800;margin-top:4px;">${SETS.length} Sets</div>
+              </div>
+              <div class="kpi-card">
+                <div style="font-size:12px;color:var(--text-muted);">कुल अद्वितीय प्रश्न</div>
+                <div class="tabular" style="font-size:24px;font-weight:800;margin-top:4px;">${totalQuestionsAll.toLocaleString('en-IN')} Qs</div>
+              </div>
+              <div class="kpi-card">
+                <div style="font-size:12px;color:var(--text-muted);">प्रत्येक सेट संरचना</div>
+                <div class="tabular" style="font-size:24px;font-weight:800;margin-top:4px;color:var(--primary);">100 Lib + 50 GK</div>
+              </div>
+              <div class="kpi-card">
+                <div style="font-size:12px;color:var(--text-muted);">निर्धारित समय एवं पूर्णांक</div>
+                <div class="tabular" style="font-size:24px;font-weight:800;margin-top:4px;color:var(--success);">150 Min · 150 Marks</div>
+              </div>
+            </div>
+
+            <div class="sets-grid">${cardsHtml}</div>
+          </div>
+        `;
+      }
+
+      function renderInstructions() {
+        const s = state.activeSet;
+        return `
+          <header class="topbar">
+            <div class="brand" onclick="BLET.backHome()">
+              <div class="brand-badge">BLET</div>
+              <div style="font-weight:800;">${s.title} — परीक्षा निर्देश (Instructions)</div>
+            </div>
+            <button class="btn btn-outline" style="background:#1e293b;color:#fff;border-color:#334155;" onclick="BLET.backHome()">← वापस डैशबोर्ड</button>
+          </header>
+          <div class="container" style="max-width:840px;">
+            <div class="kpi-card" style="padding:28px;space-y:18px;">
+              <h2 style="font-size:20px;font-weight:800;margin-bottom:6px;">${s.title} (${s.code}) — महत्वपूर्ण निर्देश</h2>
+              <p style="font-size:13px;color:var(--text-muted);margin-bottom:18px;">${s.sub}</p>
+
+              <div class="kpi-grid" style="margin-bottom:18px;">
+                <div class="kpi-card"><div style="font-size:11px;color:var(--text-muted);">कुल प्रश्न</div><div class="tabular" style="font-size:20px;font-weight:800;">150 प्रश्न</div></div>
+                <div class="kpi-card"><div style="font-size:11px;color:var(--text-muted);">समय अवधि</div><div class="tabular" style="font-size:20px;font-weight:800;">150 मिनट</div></div>
+                <div class="kpi-card"><div style="font-size:11px;color:var(--text-muted);">अंकन</div><div class="tabular" style="font-size:20px;font-weight:800;color:var(--success);">+1.0 अंक</div></div>
+                <div class="kpi-card"><div style="font-size:11px;color:var(--text-muted);">नकारात्मक अंकन</div><div class="tabular" style="font-size:20px;font-weight:800;">0.00</div></div>
+              </div>
+
+              <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:12px;font-weight:700;margin-bottom:6px;">अभ्यर्थी का नाम (Candidate Name):</label>
+                <input id="cand-name-input" type="text" value="${state.candidateName}" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface-alt);color:var(--text);font-size:14px;" />
+              </div>
+
+              <ul style="font-size:13.5px;padding-left:20px;margin-bottom:20px;line-height:1.8;">
+                <li>प्रश्न 1 से 100: <strong>पुस्तकालय एवं सूचना विज्ञान (Library Science)</strong> तथा प्रश्न 101 से 150: <strong>सामान्य ज्ञान (General Knowledge)</strong>।</li>
+                <li>प्रत्येक प्रश्न में 4 विकल्प (A, B, C, D) हैं। विकल्प चुनकर <strong>Save & Next</strong> पर क्लिक करें।</li>
+                <li>150 मिनट पूर्ण होने पर परीक्षा स्वतः सबमिट हो जाएगी और विस्तृत उत्तर व्याख्या प्रदर्शित होगी।</li>
+              </ul>
+
+              <label style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;margin-bottom:20px;cursor:pointer;">
+                <input id="agree-check" type="checkbox" checked style="width:17px;height:17px;" />
+                <span>मैंने सभी निर्देश पढ़ लिए हैं और मैं ईमानदारी से परीक्षा देने के लिए तैयार हूँ।</span>
+              </label>
+
+              <div style="display:flex;gap:12px;justify-content:flex-end;">
+                <button class="btn btn-outline" onclick="BLET.backHome()">रद्द करें</button>
+                <button class="btn btn-primary" style="padding:11px 24px;font-size:14px;" onclick="BLET.startExam()">▶ परीक्षा प्रारंभ करें (Start CBT)</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderExam() {
+        const s = state.activeSet;
+        const q = s.qs[state.currentIdx];
+        let ansCount = 0, notAnsCount = 0, notVisCount = 0, revCount = 0;
+        for (let i = 0; i < s.qs.length; i++) {
+          const st = state.palette[i] || 'not_visited';
+          if (st === 'answered' || st === 'answered_and_marked') ansCount++;
+          else if (st === 'not_answered') notAnsCount++;
+          else if (st === 'marked_for_review') revCount++;
+          else notVisCount++;
+        }
+
+        const optsHtml = ['A', 'B', 'C', 'D'].map(k => {
+          const isSel = state.selectedDraft === k;
+          let cls = 'opt-btn' + (isSel ? ' selected' : '');
+          if (state.mode === 'practice' && state.showPracticeAns) {
+            if (q.a === k) cls = 'opt-btn correct';
+            else if (isSel && q.a !== k) cls = 'opt-btn wrong';
+          }
+          return `
+            <button type="button" class="${cls}" onclick="BLET.selectOption('${k}')">
+              <span class="opt-key">${k}</span>
+              <span style="flex:1;">${q.o[k]}</span>
+            </button>
+          `;
+        }).join('');
+
+        const paletteHtml = s.qs.map((item, idx) => {
+          const st = state.palette[idx] || 'not_visited';
+          const cur = idx === state.currentIdx ? ' current' : '';
+          return `<button type="button" class="p-btn tabular ${st}${cur}" onclick="BLET.goToQuestion(${idx})">${item.n}</button>`;
+        }).join('');
+
+        return `
+          <header class="topbar">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <button class="btn btn-outline" style="background:#1e293b;color:#fff;border-color:#334155;padding:6px 10px;" onclick="BLET.backHome()">← बाहर</button>
+              <div>
+                <div style="font-weight:800;font-size:14px;">${s.code} · ${state.candidateName}</div>
+                <div class="tabular" style="font-size:11px;color:#94a3b8;">हल किए गए: ${ansCount} / ${s.qs.length}</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn ${q.s === 'L' ? 'btn-primary' : 'btn-outline'}" style="padding:6px 12px;font-size:12px;" onclick="BLET.goToQuestion(0)">पुस्तकालय विज्ञान (1–100)</button>
+              <button class="btn ${q.s === 'G' ? 'btn-primary' : 'btn-outline'}" style="padding:6px 12px;font-size:12px;" onclick="BLET.goToQuestion(100)">सामान्य ज्ञान (101–150)</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div id="live-timer" class="timer-pill tabular ${state.remainingSeconds <= 600 ? 'low' : ''}">⏱ ${formatMMSS(state.remainingSeconds)}</div>
+              <button class="btn btn-outline" style="background:#1e293b;color:#fff;border-color:#334155;padding:6px 10px;" onclick="BLET.toggleTheme()">${state.darkMode ? '☀' : '☾'}</button>
+            </div>
+          </header>
+
+          <div class="exam-layout">
+            <main class="exam-main">
+              <div class="q-card">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;padding-bottom:12px;margin-bottom:16px;border-bottom:1px solid var(--border);">
+                    <div>
+                      <span class="tabular" style="font-size:18px;font-weight:800;color:var(--primary);">प्रश्न संख्या ${q.n} / ${s.qs.length}</span>
+                      <span style="font-size:12px;color:var(--text-muted);margin-left:8px;">· ${q.u} (${q.ut})</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);">${q.t} · स्तर: ${q.d} · +1.0 अंक</div>
+                  </div>
+
+                  <div style="font-size:17px;font-weight:700;margin-bottom:20px;white-space:pre-line;line-height:1.7;">${q.q}</div>
+
+                  <div>${optsHtml}</div>
+
+                  ${state.mode === 'practice' ? `
+                    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);">
+                      <button class="btn btn-outline" onclick="BLET.togglePracticeAns()">👁 ${state.showPracticeAns ? 'उत्तर छिपाएँ' : 'सही उत्तर एवं व्याख्या देखें'}</button>
+                      ${state.showPracticeAns ? `
+                        <div style="margin-top:12px;padding:14px;border-radius:10px;background:var(--success-soft);border:1px solid var(--success);font-size:13.5px;">
+                          <div style="font-weight:800;margin-bottom:4px;">सही उत्तर: विकल्प (${q.a}) — ${q.o[q.a]}</div>
+                          <div><strong>व्याख्या:</strong> ${q.e}</div>
+                        </div>
+                      ` : ''}
+                    </div>
+                  ` : ''}
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn btn-outline" onclick="BLET.goToQuestion(${state.currentIdx - 1})" ${state.currentIdx === 0 ? 'disabled' : ''}>← पिछला</button>
+                    <button class="btn btn-purple" onclick="BLET.markReviewAndNext()">समीक्षा हेतु चिह्नित व आगे</button>
+                    <button class="btn btn-outline" onclick="BLET.clearResponse()">उत्तर हटाएँ</button>
+                  </div>
+                  <div style="display:flex;gap:10px;">
+                    <button class="btn btn-success" onclick="BLET.saveAndNext()">सहेजें और आगे बढ़ें (Save & Next) →</button>
+                    <button class="btn btn-primary" onclick="BLET.submitExam(false)">✓ Submit Test</button>
+                  </div>
+                </div>
+              </div>
+            </main>
+
+            <aside class="palette-sidebar">
+              <div style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                <div><span style="color:#16a34a;font-weight:800;">● Answered:</span> ${ansCount}</div>
+                <div><span style="color:#dc2626;font-weight:800;">● Not Ans:</span> ${notAnsCount}</div>
+                <div><span style="color:#7c3aed;font-weight:800;">● Review:</span> ${revCount}</div>
+                <div><span style="color:var(--text-muted);font-weight:800;">● Not Visited:</span> ${notVisCount}</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;">
+                <div class="palette-grid">${paletteHtml}</div>
+              </div>
+              <div style="padding:14px;border-top:1px solid var(--border);">
+                <button class="btn btn-primary" style="width:100%;padding:11px;" onclick="BLET.submitExam(false)">✓ परीक्षा सबमिट करें (Submit Exam)</button>
+              </div>
+            </aside>
+          </div>
+        `;
+      }
+
+      function renderResult() {
+        const r = state.lastResult;
+        const s = state.activeSet;
+        const filteredQs = s.qs.map((q, idx) => {
+          const uAns = r.responses[idx] || null;
+          const st = !uAns ? 'unattempted' : (uAns === q.a ? 'correct' : 'incorrect');
+          return { q, idx, uAns, st };
+        }).filter(item => state.resultFilter === 'all' || item.st === state.resultFilter);
+
+        const reviewHtml = filteredQs.map(({ q, uAns, st }) => `
+          <div style="padding:18px;border-bottom:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
+              <strong>प्रश्न #${q.n} · ${q.u} (${q.t})</strong>
+              <span style="font-weight:800;color:${st === 'correct' ? '#16a34a' : st === 'incorrect' ? '#dc2626' : 'var(--text-muted)'};">
+                ${st === 'correct' ? '✓ सही (+1)' : st === 'incorrect' ? '✗ गलत (0)' : '○ छोड़ा गया'}
+              </span>
+            </div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:10px;white-space:pre-line;">${q.q}</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-bottom:10px;font-size:13px;">
+              ${['A', 'B', 'C', 'D'].map(k => `
+                <div style="padding:8px 10px;border-radius:8px;border:1px solid ${q.a === k ? '#16a34a' : (uAns === k ? '#dc2626' : 'var(--border)')};background:${q.a === k ? 'var(--success-soft)' : (uAns === k ? 'var(--danger-soft)' : 'var(--surface)')};">
+                  <strong>(${k})</strong> ${q.o[k]} ${q.a === k ? ' ✓' : ''}
+                </div>
+              `).join('')}
+            </div>
+            <div style="font-size:12.5px;padding:10px;border-radius:8px;background:var(--surface-alt);">
+              <strong>आपका उत्तर:</strong> ${uAns || 'अनुत्तरित'} · <strong style="color:var(--success);">सही उत्तर: (${q.a})</strong><br/>
+              <strong>व्याख्या:</strong> ${q.e}
+            </div>
+          </div>
+        `).join('');
+
+        return `
+          <header class="topbar no-print">
+            <div class="brand" onclick="BLET.backHome()">
+              <div class="brand-badge">BLET</div>
+              <div style="font-weight:800;">${r.setTitle} — परीक्षा परिणाम एवं उत्तर कुंजी</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-outline" style="background:#1e293b;color:#fff;border-color:#334155;" onclick="window.print()">🖨 Print / PDF</button>
+              <button class="btn btn-primary" onclick="BLET.backHome()">← सभी सेट्स डैशबोर्ड</button>
+            </div>
+          </header>
+          <div class="container">
+            <div class="hero">
+              <div>
+                <div style="font-size:11px;color:#60a5fa;font-weight:700;">BLET OFFICIAL SCORECARD · ${r.setCode}</div>
+                <h1 style="font-size:24px;font-weight:800;">अभ्यर्थी: ${r.candidateName}</h1>
+                <p style="font-size:12px;color:#cbd5e1;">दिनांक: ${r.dateStr} · समय: ${Math.floor(r.timeTakenSec / 60)} मिनट ${r.timeTakenSec % 60} सेकंड</p>
+              </div>
+              <div class="tabular" style="text-align:right;">
+                <div style="font-size:32px;font-weight:800;color:#4ade80;">${r.correct} / ${r.total} (${r.pct}%)</div>
+                <div style="font-size:12px;color:#cbd5e1;">सटीकता (Accuracy): ${r.acc}% · Lib Sci: ${r.libCorrect}/${r.libTotal} · GK: ${r.gkCorrect}/${r.gkTotal}</div>
+              </div>
+            </div>
+
+            <div class="kpi-grid">
+              <div class="kpi-card"><div>कुल प्रयास</div><div class="tabular" style="font-size:22px;font-weight:800;">${r.attempted} / ${r.total}</div></div>
+              <div class="kpi-card"><div>सही उत्तर (+1)</div><div class="tabular" style="font-size:22px;font-weight:800;color:var(--success);">${r.correct}</div></div>
+              <div class="kpi-card"><div>गलत उत्तर (0)</div><div class="tabular" style="font-size:22px;font-weight:800;color:var(--danger);">${r.incorrect}</div></div>
+              <div class="kpi-card"><div>छोड़े गए प्रश्न</div><div class="tabular" style="font-size:22px;font-weight:800;">${r.unattempted}</div></div>
+            </div>
+
+            <div class="kpi-card" style="padding:0;overflow:hidden;">
+              <div class="no-print" style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+                <strong style="font-size:15px;">संपूर्ण 150-प्रश्न उत्तर कुंजी एवं व्याख्या समीक्षा</strong>
+                <div style="display:flex;gap:6px;">
+                  <button class="btn ${state.resultFilter === 'all' ? 'btn-primary' : 'btn-outline'}" onclick="BLET.setResultFilter('all')">सभी (150)</button>
+                  <button class="btn ${state.resultFilter === 'correct' ? 'btn-primary' : 'btn-outline'}" onclick="BLET.setResultFilter('correct')">सही (${r.correct})</button>
+                  <button class="btn ${state.resultFilter === 'incorrect' ? 'btn-primary' : 'btn-outline'}" onclick="BLET.setResultFilter('incorrect')">गलत (${r.incorrect})</button>
+                  <button class="btn ${state.resultFilter === 'unattempted' ? 'btn-primary' : 'btn-outline'}" onclick="BLET.setResultFilter('unattempted')">छोड़े (${r.unattempted})</button>
+                </div>
+              </div>
+              <div>${reviewHtml}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function render() {
+        const root = document.getElementById('app');
+        if (state.view === 'instructions') root.innerHTML = renderInstructions();
+        else if (state.view === 'exam') root.innerHTML = renderExam();
+        else if (state.view === 'result') root.innerHTML = renderResult();
+        else root.innerHTML = renderDashboard();
+      }
+
+      render();
+    })();
+  </script>
+</body>
+</html>

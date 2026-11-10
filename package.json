@@ -1,0 +1,9 @@
+{
+  "name": "blet-cbt-paid-checkout",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BLET CBT static site with Netlify serverless Razorpay Standard Checkout endpoints",
+  "scripts": {
+    "dev": "netlify dev"
+  }
+}
